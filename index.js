@@ -94,7 +94,7 @@ console.log(rfId,bookedKey)
     if (student.keyStatus === "Taken" && bookedKey===undefined) {
       return res.status(200).send({ message: "Key already taken!", code: "Camera activated" });
     }
-    if (student.keyStatus === "Taken" && (bookedKey === student.TakenKeyNumber || bookedKey === key)) {
+    if (student.keyStatus === "Taken" && bookedKey === student.TakenKeyNumber ) {
       await studentCollection.updateOne(
         { rfId },
         { $set: { keyStatus: "availble", lastKeyActivityTime: new Date().toISOString(), TakenKeyNumber: null } }
