@@ -62,8 +62,9 @@ const insertIfNotExists = async (collectionName, query, newEntry) => {
 
 // Add Key to Stack
 app.post('/api/Locker/key', async (req, res) => {
-  const { data: Key_ID } = req.body;
-
+  const { data } = req.body;
+  console.log(data);
+  const  Key_ID  = data;
   if (!Key_ID) return res.status(400).send({ message: "Key ID is required." });
 
   try {
@@ -93,7 +94,7 @@ console.log(rfId,bookedKey)
     if (student.keyStatus === "Taken" && bookedKey===undefined) {
       return res.status(200).send({ message: "Key already taken!", code: "Camera activated" });
     }
-    if (student.keyStatus === "Taken" && bookedKey === student.TakenKeyNumber) {
+    if (student.keyStatus === "Taken" && (bookedKey === student.TakenKeyNumber || bookedKey === key)) {
       await studentCollection.updateOne(
         { rfId },
         { $set: { keyStatus: "availble", lastKeyActivityTime: new Date().toISOString(), TakenKeyNumber: null } }
