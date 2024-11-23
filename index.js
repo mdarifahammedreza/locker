@@ -81,28 +81,31 @@ const message = "runinggggggg"
 console.log(message);
 // Book a Key
 app.post('/api/student/booked-key', async (req, res) => {
-  const { data: rfId, key: bookedKey } = req.body;
-console.log(rfId,bookedKey)
+  const { data: rfId} = req.body;
+console.log(rfId)
   if (!rfId) return res.status(400).send({ message: "RFID is required." });
-
+const Key_ID = 100;
   try {
     const studentCollection = db.collection("Student_info");
     const stackCollection = db.collection("Stack_of_Keys");
 
     const student = await studentCollection.findOne({ rfId });
     if (!student) return res.status(404).send({ message: "Student not found!" });
-    if (student.keyStatus === "Taken" && bookedKey===undefined) {
-      return res.status(200).send({ message: "Key already taken!", code: "Camera activated" });
-    }
-    if (student.keyStatus === "Taken" && bookedKey === student.TakenKeyNumber ) {
+    // if (student.keyStatus === "Taken" && bookedKey===undefined) {
+    //   return res.status(200).send({ message: "Key already taken!", code: "Camera activated" });
+    // }
+    if (student.keyStatus === "Taken" ) {
+      const date = new Date();
+      const newEntry = { Key_ID, date: date.toISOString(), time: date.toLocaleTimeString() };
+      const result = await insertIfNotExists("Stack_of_Keys", { Key_ID }, newEntry);
       await studentCollection.updateOne(
         { rfId },
-        { $set: { keyStatus: "availble", lastKeyActivityTime: new Date().toISOString(), TakenKeyNumber: null } }
+        { $set: { keyStatus: "availble", lastKeyActivityTime: date.toISOString(), TakenKeyNumber: null } }
       );
       return res.status(200).send({ message: "Key submitted", code: "motor" });
     }
 
-    const key = bookedKey || (await stackCollection.find({}).sort({ _id: -1 }).toArray())[0]?.Key_ID;
+    const key =  (await stackCollection.find({}).sort({ _id: -1 }).toArray())[0]?.Key_ID;
     if (!key) return res.status(404).send({ message: "No keys available." });
 
     await studentCollection.updateOne(
