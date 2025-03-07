@@ -216,7 +216,10 @@ app.post('/api/key/return', async (req, res) => {
 
 // Start Server
 app.listen(port, () => console.log(`Server running on port ${port}`));
-
+function handleDbError(res, message) {
+  console.error(message);
+  res.status(500).send({ message });
+}
 
 // Get Student Info
 app.get('/api/student/stack', async (req, res) => {
