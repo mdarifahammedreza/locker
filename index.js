@@ -24,11 +24,10 @@ app.use(express.json());
 })();
 
 const keyStack = [];
-app.post('/', (req, res) => {
-    
-    return res
-        .status(200)
-        .send({ message: "Server runnig" });
+app.get('/', (req, res) => {
+  return res.status(200).send("Server Running");
+});
+
 
 
 // Register Student
