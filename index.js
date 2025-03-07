@@ -4,15 +4,16 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 const uri = `mongodb+srv://reza1:${process.env.PASS}@reza.lrvbq.mongodb.net/reza1?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
 let db;
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: '*' })); // Allow all origins
 app.use(express.json());
 
+// Database Connection
 (async () => {
     try {
         await client.connect();
@@ -23,29 +24,33 @@ app.use(express.json());
     }
 })();
 
-const keyStack = [];
+// Routes
 app.get('/', (req, res) => {
   res.status(200).json({ status: "success", message: "Server is running" });
 });
 
 // Register Student
 app.post('/api/student/register', async (req, res) => {
-    const { rfId, studentId, studentName } = req.body;
-    if (!rfId || !studentId || !studentName) return res.status(400).send({ message: "All fields required" });
+    try {
+        const { rfId, studentId, studentName } = req.body;
+        if (!rfId || !studentId || !studentName) return res.status(400).send({ message: "All fields required" });
 
-    const newStudent = {
-        rfId, studentId, studentName,
-        keyStatus: "Available",
-        registerDate: new Date().toISOString(),
-        takenKeyNumber: null
-    };
+        const newStudent = {
+            rfId, studentId, studentName,
+            keyStatus: "Available",
+            registerDate: new Date().toISOString(),
+            takenKeyNumber: null
+        };
 
-    const collection = db.collection("Student_info");
-    const exists = await collection.findOne({ rfId });
-    if (exists) return res.status(400).send({ message: "Student already registered" });
+        const collection = db.collection("Student_info");
+        const exists = await collection.findOne({ rfId });
+        if (exists) return res.status(400).send({ message: "Student already registered" });
 
-    await collection.insertOne(newStudent);
-    res.status(201).send({ message: "Student registered successfully" });
+        await collection.insertOne(newStudent);
+        res.status(201).send({ message: "Student registered successfully" });
+    } catch (error) {
+        res.status(500).send({ message: "Server error", error: error.message });
+    }
 });
 
 // Book a Key
@@ -96,12 +101,10 @@ app.post('/api/key/request', async (req, res) => {
   }
 });
 
-
-//add key info 
+// Add Key Info
 app.post('/api/key/add', async (req, res) => {
   try {
       const { keyId } = req.body;
-      console.log("Key ID", keyId);
       if (!keyId) {
           return res.status(400).send({ message: "Key ID is required" });
       }
@@ -123,26 +126,26 @@ app.post('/api/key/add', async (req, res) => {
   }
 });
 
-
 // Find Student Info
 app.get('/api/student/info/:studentId', async (req, res) => {
-  console.log("Get Student", req.params);
-  const { studentId } = req.params;
-  
-  if (!studentId) {
-      return res.status(400).send({ message: "Student ID is required" });
+  try {
+      const { studentId } = req.params;
+      if (!studentId) {
+          return res.status(400).send({ message: "Student ID is required" });
+      }
+
+      const collection = db.collection("Student_info");
+      const student = await collection.findOne({ studentId });
+
+      if (!student) {
+          return res.status(404).send({ message: "Student not found" });
+      }
+
+      res.status(200).send(student);
+  } catch (error) {
+      res.status(500).send({ message: "Server error", error: error.message });
   }
-
-  const collection = db.collection("Student_info");
-  const student = await collection.findOne({ studentId });
-
-  if (!student) {
-      return res.status(404).send({ message: "Student not found" });
-  }
-
-  res.status(200).send(student);
 });
-
 
 // Return Key
 app.post('/api/key/return', async (req, res) => {
@@ -212,21 +215,15 @@ app.post('/api/key/return', async (req, res) => {
   }
 });
 
-
-
-// Start Server
-app.listen(port, () => console.log(`Server running on port ${port}`));
-function handleDbError(res, message) {
-  console.error(message);
-  res.status(500).send({ message });
-}
-
 // Get Student Info
 app.get('/api/student/stack', async (req, res) => {
   try {
     const students = await db.collection("Student_info").find({}).sort({ _id: -1 }).toArray();
     res.status(200).send(students);
   } catch (error) {
-    handleDbError(res, "Error retrieving student stack.");
+    res.status(500).send({ message: "Error retrieving student stack.", error: error.message });
   }
 });
+
+// Start Server
+app.listen(port, () => console.log(`Server running on port ${port}`));
