@@ -1,172 +1,233 @@
-Here is an example of an implementation README file for your projec
+# **Key Management System - API Documentation for Frontend Developers**
+
+This document provides detailed instructions for frontend developers to integrate with the **Key Management System API**. The API is deployed on Vercel, and the base URL is:
+
+```
+https://locker-silk.vercel.app
+```
+
 ---
 
-# Library Locker Key Management System
+## **Table of Contents**
+1. [Base URL](#base-url)
+2. [API Endpoints](#api-endpoints)
+   - [Register a Student](#1-register-a-student)
+   - [Request a Key](#2-request-a-key)
+   - [Add a Key](#3-add-a-key)
+   - [Get Student Information](#4-get-student-information)
+   - [Return a Key](#5-return-a-key)
+   - [Get All Students](#6-get-all-students)
+3. [Request and Response Examples](#request-and-response-examples)
+4. [Error Handling](#error-handling)
+5. [Testing the API](#testing-the-api)
+6. [CORS Configuration](#cors-configuration)
+7. [Contact Information](#contact-information)
 
-This is a Node.js application for managing the booking and handling of keys in a library locker system. It includes routes for booking keys, retrieving available keys, and managing student key statuses.
+---
 
-## Features
+## **Base URL**
+All API requests should be made to the following base URL:
+```
+https://locker-silk.vercel.app
+```
 
-- **Key Booking**: Students can book a key by providing their RFID number. If a key is available, it will be assigned to the student.
-- **Key Stack Management**: Keys are managed in a stack (LIFO). The available keys are stored and retrieved in a last-in, first-out order.
-- **Student Info**: The system keeps track of the student’s key booking status.
-- **RFID Validation**: The system validates student RFIDs before allowing key bookings.
-- **Error Handling**: Handles errors gracefully and provides meaningful error messages.
+---
 
-## Requirements
+## **API Endpoints**
 
-Before running this project, ensure you have the following installed:
-
-- [Node.js](https://nodejs.org/) (v14 or higher)
-- [MongoDB](https://www.mongodb.com/) (running locally or using a cloud service)
-- [NPM](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
-
-## Installation
-
-1. Clone the repository to your local machine:
-
-   ```bash
-   git clone <repository-url>
-   ```
-
-2. Navigate into the project directory:
-
-   ```bash
-   cd <project-folder>
-   ```
-
-3. Install the dependencies:
-
-   ```bash
-   npm install
-   ```
-
-4. Set up your MongoDB connection. Make sure you have a running MongoDB instance. Modify the `RunServer.js` file to connect to your MongoDB database.
-
-5. Start the application:
-
-   ```bash
-   npm start
-   ```
-
-   The server will be running on [http://localhost:3000](http://localhost:3000).
-
-## API Routes
-
-### 1. **Root Route** (`GET /`)
-
-Returns the current status of the server.
-
-- **Response:**
+### **1. Register a Student**
+- **Endpoint**: `POST /api/student/register`
+- **Description**: Register a new student with RFID, student ID, and name.
+- **Request Body**:
   ```json
   {
-    "Status_code": 400,
-    "Status": "Locker server run successfully",
-    "Author": "Md Arif Ahammed Reza",
-    "Contact": "reza35-951@diu.edu.bd"
+    "rfId": "123456789",
+    "studentId": "221-35-951",
+    "studentName": "John Doe"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "message": "Student registered successfully"
   }
   ```
 
-### 2. **Book Key** (`POST /api/student/booked-key`)
+---
 
-Allows students to book a key by providing their RFID number. If the key is available, it will be assigned. The system will also manage the camera activation if needed.
-
-- **Request Body:**
+### **2. Request a Key**
+- **Endpoint**: `POST /api/key/request`
+- **Description**: Assign a key to a student using their RFID.
+- **Request Body**:
   ```json
   {
-    "data": "student_rfid",
-    "key": "optional_key_number"
+    "rfid": "123456789"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "message": "Key assigned successfully",
+    "keyId": "1"
   }
   ```
 
-- **Response:**
+---
+
+### **3. Add a Key**
+- **Endpoint**: `POST /api/key/add`
+- **Description**: Add a new key to the system.
+- **Request Body**:
   ```json
   {
-    "message": "Key booked successfully!->12345"
+    "keyId": "1"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "message": "Key added successfully"
   }
   ```
 
-### 3. **Get Available Key Stack** (`GET /api/Locker/stack`)
+---
 
-Returns the list of available keys in the stack.
+### **4. Get Student Information**
+- **Endpoint**: `GET /api/student/info/:studentId`
+- **Description**: Retrieve student information by student ID.
+- **Response**:
+  ```json
+  {
+    "_id": "65e8f1b2e4b0f1a2b3c4d5e6",
+    "studentId": "221-35-951",
+    "studentName": "John Doe",
+    "rfId": "123456789",
+    "keyStatus": "Available",
+    "registerDate": "2024-03-07T10:40:24.250Z",
+    "takenKeyNumber": null
+  }
+  ```
 
-- **Response:**
+---
+
+### **5. Return a Key**
+- **Endpoint**: `POST /api/key/return`
+- **Description**: Return a key using RFID or key number.
+- **Request Body**:
+  ```json
+  {
+    "rfid": "123456789",
+    "keyNumber": "1"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "message": "Key returned successfully"
+  }
+  ```
+
+---
+
+### **6. Get All Students**
+- **Endpoint**: `GET /api/student/stack`
+- **Description**: Retrieve a list of all registered students.
+- **Response**:
   ```json
   [
     {
-      "Key_ID": "12345",
-      "Status": "Available"
+      "_id": "65e8f1b2e4b0f1a2b3c4d5e6",
+      "studentId": "221-35-951",
+      "studentName": "John Doe",
+      "rfId": "123456789",
+      "keyStatus": "Available",
+      "registerDate": "2024-03-07T10:40:24.250Z",
+      "takenKeyNumber": null
     }
   ]
   ```
 
-### 4. **Get Student Info Stack** (`GET /api/student/stack`)
+---
 
-Returns the list of students and their key statuses.
+## **Request and Response Examples**
 
-- **Response:**
-  ```json
-  [
-    {
-      "rfId": "12345",
-      "keyStatus": "Taken",
-      "TakenKeyNumber": "12345"
-    }
-  ]
+### **Example: Register a Student**
+- **Request**:
+  ```bash
+  curl -X POST https://locker-silk.vercel.app/api/student/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rfId": "123456789",
+    "studentId": "221-35-951",
+    "studentName": "John Doe"
+  }'
   ```
-
-### 5. **Manage Key Stack** (`POST /api/Locker/key`)
-
-Adds or removes a key from the stack. This route allows administrators to manage keys in the stack.
-
-- **Request Body:**
+- **Response**:
   ```json
   {
-    "data": "key_info"
+    "message": "Student registered successfully"
   }
   ```
 
-- **Response:**
+### **Example: Request a Key**
+- **Request**:
+  ```bash
+  curl -X POST https://locker-silk.vercel.app/api/key/request \
+  -H "Content-Type: application/json" \
+  -d '{
+    "rfid": "123456789"
+  }'
+  ```
+- **Response**:
   ```json
   {
-    "message": "Key added to the stack successfully."
+    "message": "Key assigned successfully",
+    "keyId": "1"
   }
   ```
-
-## Error Handling
-
-The API handles common errors and sends appropriate HTTP status codes and messages:
-
-- **400 Bad Request**: Missing or invalid input data (e.g., missing RFID).
-- **404 Not Found**: Resource not found (e.g., no keys available, student not found).
-- **500 Internal Server Error**: Server-side issues (e.g., database errors, network issues).
-
-## Example Requests
-
-- **Book Key:**
-
-  ```bash
-  curl -X POST http://localhost:3000/api/student/booked-key \
-    -H "Content-Type: application/json" \
-    -d '{"data": "12345"}'
-  ```
-
-- **Get Stack of Keys:**
-
-  ```bash
-  curl http://localhost:3000/api/Locker/stack
-  ```
-
-- **Add Key to Stack:**
-
-  ```bash
-  curl -X POST http://localhost:3000/api/Locker/key \
-    -H "Content-Type: application/json" \
-    -d '{"data": {"Key_ID": "12345", "Status": "Available"}}'
-  ```
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
+
+## **Error Handling**
+The API returns the following HTTP status codes:
+- **200**: Success
+- **400**: Bad Request (invalid input)
+- **404**: Not Found (resource not found)
+- **500**: Internal Server Error (server-side issue)
+
+Error responses include a `message` field with details:
+```json
+{
+  "message": "Student not found"
+}
+```
+
+---
+
+## **Testing the API**
+You can test the API using tools like [Postman](https://www.postman.com/) or directly in your browser console.
+
+### **Example: Fetch All Students**
+```javascript
+fetch('https://locker-silk.vercel.app/api/student/stack')
+  .then(response => response.json())
+  .then(data => console.log(data))
+  .catch(error => console.error('Error:', error));
+```
+
+---
+
+## **CORS Configuration**
+The API is configured to allow requests from all origins (`*`). You can make requests from any frontend application without CORS issues.
+
+---
+
+## **Contact Information**
+For any questions or issues, please contact:
+- **Name**: Md Arif Ahammed Reza
+- **Email**: mdarifahammedreza@gmail.com
+- **GitHub**: [REZA](https://github.com/mdarifahammedreza)
+
+---
+
+This document provides all the necessary information for frontend developers to integrate with the Key Management System API.
