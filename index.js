@@ -24,11 +24,6 @@ app.use(express.json());
 })();
 
 const keyStack = [];
-// app.get('/', (req, res) => {
-//   return res.status(200).send("Server Running");
-// });
-
-
 
 // Register Student
 app.post('/api/student/register', async (req, res) => {
