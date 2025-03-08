@@ -60,7 +60,56 @@ async function startServer() {
                 res.status(500).send({ message: "Server error", error: error.message });
             }
         });
-
+        //delete student
+        app.delete('/api/student/delete/:id', async (req, res) => {
+            try {
+                const { id } = req.params;
+                const collection = db.collection("Student_info");
+        
+                const result = await collection.deleteOne({ _id: new ObjectId(id) });
+        
+                if (result.deletedCount === 0) {
+                    return res.status(404).send({ message: "Student not found" });
+                }
+        
+                res.status(200).send({ message: "Student deleted successfully" });
+            } catch (error) {
+                res.status(500).send({ message: "Server error", error: error.message });
+            }
+        });
+        // Update Student Info
+        app.put('/api/student/update/:id', async (req, res) => {
+            try {
+                const { id } = req.params;
+                const { studentId, studentName, rfId, keyStatus, studentWarningStatus, studentBannedStatus } = req.body;
+        
+                if (!studentId || !studentName || !rfId) {
+                    return res.status(400).send({ message: "All fields required" });
+                }
+        
+                const updatedStudent = {
+                    studentId,
+                    studentName,
+                    rfId,
+                    keyStatus: keyStatus || "Available", // Default to Available if no keyStatus provided
+                    studentWarningStatus: studentWarningStatus || "No", // Default to "No"
+                    studentBannedStatus: studentBannedStatus || "No", // Default to "No"
+                    registerDate: new Date().toISOString() // Keep the register date same for updates (or update as needed)
+                };
+        
+                const collection = db.collection("Student_info");
+                const result = await collection.updateOne({ _id: new ObjectId(id) }, { $set: updatedStudent });
+        
+                if (result.matchedCount === 0) {
+                    return res.status(404).send({ message: "Student not found" });
+                }
+        
+                res.status(200).send({ message: "Student updated successfully" });
+            } catch (error) {
+                res.status(500).send({ message: "Server error", error: error.message });
+            }
+        });
+                
         // Book a Key
         app.post('/api/key/request', async (req, res) => {
             try {
