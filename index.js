@@ -78,7 +78,9 @@ async function startServer() {
                 if (!student) {
                     return res.status(404).send({ message: "Student not found" });
                 }
-
+                if (student.keyStatus === "Taken") {
+                    return res.status(400).send({ message: "Student already has a key" });
+                }
                 // Find an available key
                 const key = await keyCollection.findOne({ status: "available" });
                 if (!key) {
