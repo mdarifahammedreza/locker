@@ -217,7 +217,7 @@ async function startServer() {
           { returnDocument: "after" }
         );
         console.log(key);
-        if (!key) {
+        if (!key.value) {
           return res.status(404).send({ message: "No available keys" });
         }
 
