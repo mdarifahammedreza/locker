@@ -212,7 +212,7 @@ async function startServer() {
         }
 
         const key = await keyCollection.findOneAndUpdate(
-          { status: "available" },
+          { status: "Taken" },
           { $set: { status: "assigned", assignedTo: student.studentId } },
           { returnDocument: "after" }
         );
