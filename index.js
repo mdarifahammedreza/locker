@@ -217,7 +217,7 @@ async function startServer() {
           { returnDocument: "after" }
         );
         console.log(key);
-        if (!key.value) {
+        if (!key.keyId) {
           return res.status(404).send({ message: "No available keys" });
         }
 
@@ -226,7 +226,7 @@ async function startServer() {
           {
             $set: {
               keyStatus: "Taken",
-              takenKeyNumber: key.value.keyId,
+              takenKeyNumber: key.keyId,
               registerDate: new Date(),
             },
           }
