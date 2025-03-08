@@ -54,11 +54,20 @@ async function startServer() {
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
+      // Send a heartbeat every 15 seconds to keep the connection alive
+      const heartbeatInterval = setInterval(() => {
+        res.write(":\n\n"); // SSE heartbeat
+      }, 15000);
+
+      // Send initial log message
+      res.write(`data: ${JSON.stringify({ timestamp: new Date().toISOString(), message: "Connected to logs" })}\n\n`);
+
       // Add this client to the set
       clients.add(res);
 
       // Clean up on client disconnect
       req.on("close", () => {
+        clearInterval(heartbeatInterval);
         clients.delete(res);
         res.end();
       });
