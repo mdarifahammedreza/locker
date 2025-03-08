@@ -242,7 +242,7 @@ async function startServer() {
           .status(200)
           .send({ message: "Key assigned successfully", keyId: key.value.keyId });
       } catch (error) {
-        res.status(500).send({ message: "Server error", error: error.message });
+        res.status(500).send({ message: `Server error ${error}` , error: error.message });
       }
     });
 
