@@ -196,7 +196,7 @@ app.get('/api/key/all', async (req, res) => {
         const keys = await collection.find({}).toArray();
 
         if (keys.length === 0) {
-            return res.status(404).send({ message: "No keys found" });
+            return res.status(200).send({ message: "No keys found" });
         }
 
         res.status(200).send(keys);
