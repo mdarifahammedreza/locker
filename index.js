@@ -195,7 +195,7 @@ async function startServer() {
     app.post("/api/key/request", async (req, res) => {
       try {
         const { rfid } = req.body;
-
+          console.log(rfid);
         if (!rfid) {
           return res.status(400).send({ message: "RFID is required" });
         }
@@ -216,7 +216,7 @@ async function startServer() {
           { $set: { status: "assigned", assignedTo: student.studentId } },
           { returnDocument: "after" }
         );
-
+        console.log(key);
         if (!key.value) {
           return res.status(404).send({ message: "No available keys" });
         }
