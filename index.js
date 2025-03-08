@@ -61,12 +61,13 @@ async function startServer() {
             }
         });
         //delete student
-        app.delete('/api/student/delete/:id', async (req, res) => {
+        app.delete('/api/student/delete/:studentid', async (req, res) => {
             try {
-                const { id } = req.params;
+                const { studentid } = req.params; // Get studentId from request parameters
                 const collection = db.collection("Student_info");
         
-                const result = await collection.deleteOne({ _id: new ObjectId(id) });
+                // Delete the student by studentId
+                const result = await collection.deleteOne({ studentId: studentid });
         
                 if (result.deletedCount === 0) {
                     return res.status(404).send({ message: "Student not found" });
@@ -77,6 +78,7 @@ async function startServer() {
                 res.status(500).send({ message: "Server error", error: error.message });
             }
         });
+        
         // Update Student Info
         app.put('/api/student/update/:id', async (req, res) => {
             try {
