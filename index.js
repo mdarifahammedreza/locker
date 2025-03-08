@@ -80,10 +80,9 @@ async function startServer() {
         });
         
         // Update Student Info
-        app.put('/api/student/update/:_id', async (req, res) => {
+        app.put('/api/student/update/:studentid', async (req, res) => {
             try {
-                const { _id } = req.params;
-                console.log(_id);
+                const { studentid } = req.params; // Get studentId from request parameters
                 const { studentId, studentName, rfId, keyStatus, studentWarningStatus, studentBannedStatus } = req.body;
         
                 if (!studentId || !studentName || !rfId) {
@@ -101,7 +100,7 @@ async function startServer() {
                 };
         
                 const collection = db.collection("Student_info");
-                const result = await collection.updateOne({ _id: new ObjectId(_id) }, { $set: updatedStudent });
+                const result = await collection.updateOne({ studentId: studentid }, { $set: updatedStudent });
         
                 if (result.matchedCount === 0) {
                     return res.status(404).send({ message: "Student not found" });
@@ -112,6 +111,7 @@ async function startServer() {
                 res.status(500).send({ message: "Server error", error: error.message });
             }
         });
+        
                 
         // Book a Key
         app.post('/api/key/request', async (req, res) => {
