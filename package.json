@@ -18,6 +18,7 @@
     "mongodb": "^6.10.0",
     "node-fetch": "^2.7.0",
     "nodemon": "^3.1.7",
-    "qrcode-reader": "^1.0.4"
+    "qrcode-reader": "^1.0.4",
+    "websocket": "^1.0.35"
   }
 }

@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const WebSocket = require("ws");
 require("dotenv").config();
 
 const app = express();
@@ -13,7 +14,15 @@ let db;
 app.use(cors({ origin: "*" })); // Allow all domains
 app.use(express.json());
 
-// Store active SSE connections
+// Create an HTTP server
+const server = app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
+// Create a WebSocket server
+const wss = new WebSocket.Server({ server });
+
+// Store active WebSocket connections
 const clients = new Set();
 
 // Function to connect to MongoDB
@@ -29,12 +38,37 @@ async function connectToDatabase() {
   }
 }
 
-// Function to broadcast logs to all connected clients
+// Function to broadcast logs to all connected WebSocket clients
 function broadcastLog(logMessage) {
-  for (const client of clients) {
-    client.write(`data: ${JSON.stringify(logMessage)}\n\n`);
-  }
+  const message = JSON.stringify(logMessage);
+  clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
 }
+
+// WebSocket connection handler
+wss.on("connection", (ws) => {
+  console.log("New WebSocket connection");
+
+  // Add the new client to the set
+  clients.add(ws);
+
+  // Send initial log message
+  ws.send(
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      message: "Connected to logs",
+    })
+  );
+
+  // Handle client disconnect
+  ws.on("close", () => {
+    console.log("WebSocket connection closed");
+    clients.delete(ws);
+  });
+});
 
 // Start the server only after the database connection is established
 async function startServer() {
@@ -45,32 +79,6 @@ async function startServer() {
     // Routes
     app.get("/", (req, res) => {
       res.status(200).json({ status: "success", message: "Server is running" });
-    });
-
-    // Real-Time Logs Endpoint (SSE)
-    app.get("/api/logs", (req, res) => {
-      // Set headers for SSE
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-    
-      // Send a heartbeat every 10 seconds
-      const heartbeatInterval = setInterval(() => {
-        res.write(":\n\n"); // SSE heartbeat
-      }, 1000);
-    
-      // Send initial log message
-      res.write(`data: ${JSON.stringify({ timestamp: new Date().toISOString(), message: "Connected to logs" })}\n\n`);
-    
-      // Add this client to the set
-      clients.add(res);
-    
-      // Clean up on client disconnect
-      req.on("close", () => {
-        clearInterval(heartbeatInterval);
-        clients.delete(res);
-        res.end();
-      });
     });
 
     // Register Student
@@ -464,11 +472,6 @@ async function startServer() {
       } catch (error) {
         res.status(500).send({ message: "Error retrieving student stack.", error: error.message });
       }
-    });
-
-    // Start the server
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
