@@ -83,7 +83,7 @@ async function startServer() {
         app.put('/api/student/update/:_id', async (req, res) => {
             try {
                 const { _id } = req.params;
-                console.log(id);
+                console.log(_id);
                 const { studentId, studentName, rfId, keyStatus, studentWarningStatus, studentBannedStatus } = req.body;
         
                 if (!studentId || !studentName || !rfId) {
