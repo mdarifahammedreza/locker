@@ -187,6 +187,23 @@ async function startServer() {
                 res.status(500).send({ message: "Server error", error: error.message });
             }
         });
+//fetch all keys
+app.get('/api/key/all', async (req, res) => {
+    try {
+        const collection = db.collection("Key_Stack");
+
+        // Fetch all keys
+        const keys = await collection.find({}).toArray();
+
+        if (keys.length === 0) {
+            return res.status(404).send({ message: "No keys found" });
+        }
+
+        res.status(200).send(keys);
+    } catch (error) {
+        res.status(500).send({ message: "Server error", error: error.message });
+    }
+});
 
         // Find Student Info
         app.get('/api/student/info/:studentId', async (req, res) => {
