@@ -211,26 +211,22 @@ async function startServer() {
           return res.status(400).send({ message: "Student already has a key" });
         }
 
-        const key = await keyCollection.findOneAndUpdate(
-          { status: "available" },
-          { $set: { status: "assigned", assignedTo: student.studentId } },
-          { returnDocument: "after" }
-        );
-        console.log(key);
-        if (!key.keyId) {
-          return res.status(404).send({ message: "No available keys" });
-        }
+        await keyCollection.updateOne(
+          { keyId: key.keyId },
+          { $set: { status: "assigned", assignedTo: student.studentId } }
+      );
 
-        await studentCollection.updateOne(
+      // Update the student document to record the key they took
+      await studentCollection.updateOne(
           { rfId: rfid },
           {
-            $set: {
-              keyStatus: "Taken",
-              takenKeyNumber: key.keyId,
-              registerDate: new Date(),
-            },
+              $set: {
+                  keyStatus: "Taken",
+                  takenKeyNumber: key.keyId,
+                  registerDate: new Date()
+              }
           }
-        );
+      );
 
         // Broadcast log
         broadcastLog({
@@ -238,11 +234,9 @@ async function startServer() {
           message: `Key ${key.value.keyId} assigned to student ${student.studentId}`,
         });
 
-        res
-          .status(200)
-          .send({ message: "Key assigned successfully", keyId: key.value.keyId });
-      } catch (error) {
-        res.status(500).send({ message: `Server error ${error}` , error: error.message });
+        res.status(200).send({ message: "Key assigned successfully", keyId: key.keyId });
+             } catch (error) {
+                 res.status(500).send({ message: "Server error", error: error.message });
       }
     });
 
