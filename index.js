@@ -1,30 +1,17 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const WebSocket = require("ws");
 require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 3000;
-// const uri = `mongodb+srv://reza1:${process.env.PASS}@reza.lrvbq.mongodb.net/reza1?retryWrites=true&w=majority`; 
-const uri = `mongodb+srv://reza1:QxAB25LI1yJJ65AG@reza.lrvbq.mongodb.net/reza1?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://reza1:${process.env.PASS}@reza.lrvbq.mongodb.net/reza1?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
 let db;
 
 // Middleware
 app.use(cors({ origin: "*" })); // Allow all domains
 app.use(express.json());
-
-// Create an HTTP server
-const server = app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
-
-// Create a WebSocket server
-const wss = new WebSocket.Server({ server });
-
-// Store active WebSocket connections
-const clients = new Set();
 
 // Function to connect to MongoDB
 async function connectToDatabase() {
@@ -39,36 +26,13 @@ async function connectToDatabase() {
   }
 }
 
-// Function to broadcast logs to all connected WebSocket clients
-function broadcastLog(logMessage) {
-  const message = JSON.stringify(logMessage);
-  clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
-  });
-}
+// Handle MongoDB connection errors
+client.on("error", (error) => {
+  console.error("MongoDB Error:", error);
+});
 
-// WebSocket connection handler
-wss.on("connection", (ws) => {
-  console.log("New WebSocket connection");
-
-  // Add the new client to the set
-  clients.add(ws);
-
-  // Send initial log message
-  ws.send(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      message: "Connected to logs",
-    })
-  );
-
-  // Handle client disconnect
-  ws.on("close", () => {
-    console.log("WebSocket connection closed");
-    clients.delete(ws);
-  });
+client.on("close", () => {
+  console.log("MongoDB Connection Closed");
 });
 
 // Start the server only after the database connection is established
@@ -107,12 +71,6 @@ async function startServer() {
 
         await collection.insertOne(newStudent);
 
-        // Broadcast log
-        broadcastLog({
-          timestamp: new Date().toISOString(),
-          message: `Student ${studentId} registered successfully`,
-        });
-
         res.status(201).send({ message: "Student registered successfully" });
       } catch (error) {
         res.status(500).send({ message: "Server error", error: error.message });
@@ -130,12 +88,6 @@ async function startServer() {
         if (result.deletedCount === 0) {
           return res.status(404).send({ message: "Student not found" });
         }
-
-        // Broadcast log
-        broadcastLog({
-          timestamp: new Date().toISOString(),
-          message: `Student ${studentid} deleted successfully`,
-        });
 
         res.status(200).send({ message: "Student deleted successfully" });
       } catch (error) {
@@ -180,12 +132,6 @@ async function startServer() {
           return res.status(404).send({ message: "Student not found" });
         }
 
-        // Broadcast log
-        broadcastLog({
-          timestamp: new Date().toISOString(),
-          message: `Student ${studentid} updated successfully`,
-        });
-
         res.status(200).send({ message: "Student updated successfully" });
       } catch (error) {
         res.status(500).send({ message: "Server error", error: error.message });
@@ -197,36 +143,36 @@ async function startServer() {
       try {
         const { rfid } = req.body;
         console.log("Received RFID:", rfid);
-    
+
         if (!rfid) {
           return res.status(400).send({ message: "RFID is required" });
         }
-    
+
         const studentCollection = db.collection("Student_info");
         const keyCollection = db.collection("Key_Stack");
-    
+
         // Find the student by RFID
         const student = await studentCollection.findOne({ rfId: rfid });
         if (!student) {
           return res.status(404).send({ message: "Student not found" });
         }
-    
+
         // Check if the student already has a key
         if (student.keyStatus === "Taken") {
           return res.status(400).send({ message: "Student already has a key" });
         }
-    
+
         // Find an available key and assign it to the student
         const key = await keyCollection.findOneAndUpdate(
           { status: "available" }, // Find a key with status "available"
           { $set: { status: "assigned", assignedTo: student.studentId } }, // Update the key status
           { returnDocument: "after" } // Return the updated key document
         );
-        console.log("Key found:", key);
+
         if (!key.value) {
           return res.status(404).send({ message: "No available keys" });
         }
-    
+
         // Update the student document to record the key they took
         await studentCollection.updateOne(
           { rfId: rfid },
@@ -238,19 +184,9 @@ async function startServer() {
             },
           }
         );
-    
+
         console.log("Student updated with key:", key.value.keyId);
-    
-        // Broadcast log
-        try {
-          broadcastLog({
-            timestamp: new Date().toISOString(),
-            message: `Key ${key.value.keyId} assigned to student ${student.studentId}`,
-          });
-        } catch (error) {
-          console.error("Error in broadcast:", error);
-        }
-    
+
         // Send success response
         res.status(200).send({
           message: "Key assigned successfully",
@@ -286,12 +222,6 @@ async function startServer() {
           status: "available",
         });
 
-        // Broadcast log
-        broadcastLog({
-          timestamp: new Date().toISOString(),
-          message: `Key ${normalizedKeyId} added successfully`,
-        });
-
         res.status(201).send({ message: "Key added successfully" });
       } catch (error) {
         res.status(500).send({ message: "Server error", error: error.message });
@@ -321,12 +251,6 @@ async function startServer() {
         }
 
         await collection.updateOne({ keyId }, { $set: updateData });
-
-        // Broadcast log
-        broadcastLog({
-          timestamp: new Date().toISOString(),
-          message: `Key ${keyId} updated successfully`,
-        });
 
         res.status(200).send({ message: "Key updated successfully" });
       } catch (error) {
@@ -366,12 +290,6 @@ async function startServer() {
         if (result.deletedCount === 0) {
           return res.status(404).send({ message: "Key not found" });
         }
-
-        // Broadcast log
-        broadcastLog({
-          timestamp: new Date().toISOString(),
-          message: `Key ${keyId} deleted successfully`,
-        });
 
         res.status(200).send({ message: "Key deleted successfully" });
       } catch (error) {
@@ -459,12 +377,6 @@ async function startServer() {
           }
         );
 
-        // Broadcast log
-        broadcastLog({
-          timestamp: new Date().toISOString(),
-          message: `Key ${keyId} returned by student ${student.studentId}`,
-        });
-
         res.status(200).send({ message: "Key returned successfully" });
       } catch (error) {
         res.status(500).send({ message: "Server error", error: error.message });
@@ -488,6 +400,11 @@ async function startServer() {
       } catch (error) {
         res.status(500).send({ message: "Error retrieving student stack.", error: error.message });
       }
+    });
+
+    // Start the server
+    server.listen(port, () => {
+      console.log(`Server running on port ${port}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
