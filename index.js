@@ -215,7 +215,7 @@ async function startServer() {
           { keyId: key.keyId },
           { $set: { status: "assigned", assignedTo: student.studentId } }
       );
-
+console.log(key.keyId);
       // Update the student document to record the key they took
       await studentCollection.updateOne(
           { rfId: rfid },
@@ -228,15 +228,20 @@ async function startServer() {
           }
       );
 
-        // Broadcast log
-        broadcastLog({
-          timestamp: new Date().toISOString(),
-          message: `Key ${key.value.keyId} assigned to student ${student.studentId}`,
-        });
+     console.log("student updated")   // Broadcast log
+        try {
+            broadcastLog({
+                timestamp: new Date().toISOString(),
+                message: `Key ${key.keyId} assigned to student ${student.studentId}`
+            });
+        }
+        catch (error) {
+            console.log("error in broadcast"+error);
+        }
 
         res.status(200).send({ message: "Key assigned successfully", keyId: key.keyId });
              } catch (error) {
-                 res.status(500).send({ message: "Server error", error: error.message });
+                 res.status(500).send({ message: `Server error ${error}`, error: error.message });
       }
     });
 
