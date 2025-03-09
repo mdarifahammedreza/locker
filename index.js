@@ -41,8 +41,9 @@ async function startServer() {
     app.post("/api/student/register", async (req, res) => {
       try {
         const { rfId, studentId, studentName } = req.body;
-        if (!rfId || !studentId || !studentName)
+        if (!rfId || !studentId || !studentName) {
           return res.status(400).send({ message: "All fields required" });
+        }
 
         const newStudent = {
           rfId,
@@ -55,14 +56,14 @@ async function startServer() {
 
         const collection = db.collection("Student_info");
         const exists = await collection.findOne({ rfId });
-        if (exists)
-          return res
-            .status(400)
-            .send({ message: "Student already registered" });
+        if (exists) {
+          return res.status(400).send({ message: "Student already registered" });
+        }
 
         await collection.insertOne(newStudent);
         res.status(201).send({ message: "Student registered successfully" });
       } catch (error) {
+        console.error("Error in /api/student/register:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -81,6 +82,7 @@ async function startServer() {
 
         res.status(200).send({ message: "Student deleted successfully" });
       } catch (error) {
+        console.error("Error in /api/student/delete:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -124,6 +126,7 @@ async function startServer() {
 
         res.status(200).send({ message: "Student updated successfully" });
       } catch (error) {
+        console.error("Error in /api/student/update:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -154,7 +157,9 @@ async function startServer() {
           { returnDocument: "after" }
         );
 
-        
+        if (!key.value) {
+          return res.status(404).send({ message: "No available keys found" });
+        }
 
         await studentCollection.updateOne(
           { rfId: rfid },
@@ -167,10 +172,9 @@ async function startServer() {
           }
         );
 
-        res
-          .status(200)
-          .send({ message: "Key assigned successfully", keyId: key.value.keyId });
+        res.status(200).send({ message: "Key assigned successfully", keyId: key.value.keyId });
       } catch (error) {
+        console.error("Error in /api/key/request:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -201,6 +205,7 @@ async function startServer() {
 
         res.status(201).send({ message: "Key added successfully" });
       } catch (error) {
+        console.error("Error in /api/key/add:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -216,9 +221,7 @@ async function startServer() {
         updateData.assignedTo = assignedTo || "Not assigned";
 
         if (!status && !assignedTo) {
-          return res
-            .status(400)
-            .send({ message: "Status or Assigned To is required" });
+          return res.status(400).send({ message: "Status or Assigned To is required" });
         }
 
         const collection = db.collection("Key_Stack");
@@ -231,6 +234,7 @@ async function startServer() {
 
         res.status(200).send({ message: "Key updated successfully" });
       } catch (error) {
+        console.error("Error in /api/key/update:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -247,6 +251,7 @@ async function startServer() {
 
         res.status(200).send(keys);
       } catch (error) {
+        console.error("Error in /api/key/all:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -270,6 +275,7 @@ async function startServer() {
 
         res.status(200).send({ message: "Key deleted successfully" });
       } catch (error) {
+        console.error("Error in /api/key/delete:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -291,6 +297,7 @@ async function startServer() {
 
         res.status(200).send(student);
       } catch (error) {
+        console.error("Error in /api/student/info:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -301,9 +308,7 @@ async function startServer() {
         const { rfid, keyNumber } = req.body;
 
         if (!rfid && !keyNumber) {
-          return res
-            .status(400)
-            .send({ message: "RFID or Key Number is required" });
+          return res.status(400).send({ message: "RFID or Key Number is required" });
         }
 
         const studentCollection = db.collection("Student_info");
@@ -320,9 +325,7 @@ async function startServer() {
         }
 
         if (!student || !student.takenKeyNumber) {
-          return res
-            .status(404)
-            .send({ message: "Student not found or key not assigned" });
+          return res.status(404).send({ message: "Student not found or key not assigned" });
         }
 
         const keyId = keyNumber || student.takenKeyNumber;
@@ -339,9 +342,7 @@ async function startServer() {
         );
 
         if (keyUpdateResult.modifiedCount === 0) {
-          return res
-            .status(404)
-            .send({ message: "Key not found or already returned" });
+          return res.status(404).send({ message: "Key not found or already returned" });
         }
 
         await studentCollection.updateOne(
@@ -356,6 +357,7 @@ async function startServer() {
 
         res.status(200).send({ message: "Key returned successfully" });
       } catch (error) {
+        console.error("Error in /api/key/return:", error);
         res.status(500).send({ message: "Server error", error: error.message });
       }
     });
@@ -375,6 +377,7 @@ async function startServer() {
 
         res.status(200).send({ message: "Students retrieved successfully", data: students });
       } catch (error) {
+        console.error("Error in /api/student/stack:", error);
         res.status(500).send({ message: "Error retrieving student stack.", error: error.message });
       }
     });
