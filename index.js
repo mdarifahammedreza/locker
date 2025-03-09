@@ -6,7 +6,8 @@ require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 3000;
-const uri = `mongodb+srv://reza1:${process.env.PASS}@reza.lrvbq.mongodb.net/reza1?retryWrites=true&w=majority`;
+// const uri = `mongodb+srv://reza1:${process.env.PASS}@reza.lrvbq.mongodb.net/reza1?retryWrites=true&w=majority`; 
+const uri = `mongodb+srv://reza1:QxAB25LI1yJJ65AG@reza.lrvbq.mongodb.net/reza1?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
 let db;
 
@@ -221,7 +222,7 @@ async function startServer() {
           { $set: { status: "assigned", assignedTo: student.studentId } }, // Update the key status
           { returnDocument: "after" } // Return the updated key document
         );
-    
+        console.log("Key found:", key);
         if (!key.value) {
           return res.status(404).send({ message: "No available keys" });
         }
