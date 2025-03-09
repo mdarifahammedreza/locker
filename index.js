@@ -195,53 +195,69 @@ async function startServer() {
     app.post("/api/key/request", async (req, res) => {
       try {
         const { rfid } = req.body;
-          console.log(rfid);
+        console.log("Received RFID:", rfid);
+    
         if (!rfid) {
           return res.status(400).send({ message: "RFID is required" });
         }
-
+    
         const studentCollection = db.collection("Student_info");
         const keyCollection = db.collection("Key_Stack");
-
+    
+        // Find the student by RFID
         const student = await studentCollection.findOne({ rfId: rfid });
         if (!student) {
           return res.status(404).send({ message: "Student not found" });
         }
+    
+        // Check if the student already has a key
         if (student.keyStatus === "Taken") {
           return res.status(400).send({ message: "Student already has a key" });
         }
-
-        await keyCollection.updateOne(
-          { keyId: key.keyId },
-          { $set: { status: "assigned", assignedTo: student.studentId } }
-      );
-console.log(key.keyId);
-      // Update the student document to record the key they took
-      await studentCollection.updateOne(
+    
+        // Find an available key and assign it to the student
+        const key = await keyCollection.findOneAndUpdate(
+          { status: "available" }, // Find a key with status "available"
+          { $set: { status: "assigned", assignedTo: student.studentId } }, // Update the key status
+          { returnDocument: "after" } // Return the updated key document
+        );
+    
+        if (!key.value) {
+          return res.status(404).send({ message: "No available keys" });
+        }
+    
+        // Update the student document to record the key they took
+        await studentCollection.updateOne(
           { rfId: rfid },
           {
-              $set: {
-                  keyStatus: "Taken",
-                  takenKeyNumber: key.keyId,
-                  registerDate: new Date()
-              }
+            $set: {
+              keyStatus: "Taken",
+              takenKeyNumber: key.value.keyId, // Use key.value.keyId from the updated key document
+              registerDate: new Date(),
+            },
           }
-      );
-
-     console.log("student updated")   // Broadcast log
+        );
+    
+        console.log("Student updated with key:", key.value.keyId);
+    
+        // Broadcast log
         try {
-            broadcastLog({
-                timestamp: new Date().toISOString(),
-                message: `Key ${key.keyId} assigned to student ${student.studentId}`
-            });
+          broadcastLog({
+            timestamp: new Date().toISOString(),
+            message: `Key ${key.value.keyId} assigned to student ${student.studentId}`,
+          });
+        } catch (error) {
+          console.error("Error in broadcast:", error);
         }
-        catch (error) {
-            console.log("error in broadcast"+error);
-        }
-
-        res.status(200).send({ message: "Key assigned successfully", keyId: key.keyId });
-             } catch (error) {
-                 res.status(500).send({ message: `Server error ${error}`, error: error.message });
+    
+        // Send success response
+        res.status(200).send({
+          message: "Key assigned successfully",
+          keyId: key.value.keyId,
+        });
+      } catch (error) {
+        console.error("Server error:", error);
+        res.status(500).send({ message: "Server error", error: error.message });
       }
     });
 
