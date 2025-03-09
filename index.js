@@ -154,9 +154,7 @@ async function startServer() {
           { returnDocument: "after" }
         );
 
-        if (!key.value) {
-          return res.status(404).send({ message: "No available keys" });
-        }
+        
 
         await studentCollection.updateOne(
           { rfId: rfid },
